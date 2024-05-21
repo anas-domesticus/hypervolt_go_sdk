@@ -1,0 +1,724 @@
+{
+    "openapi": "3.0.2",
+    "info": {
+        "title": "hypervolt public api",
+        "contact": {
+            "name": "Api support",
+            "email": "support@hypervolt.co.uk"
+        },
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/currencies": {
+            "get": {
+                "description": "List of supported currencies",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Currencies"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/timezones": {
+            "get": {
+                "description": "List of supported timezones",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Timezones"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/charger/by-id/{id}/led/brightness": {
+            "put": {
+                "tags": ["charger"],
+                "description": "Set device brightness",
+                "operationId": "charger-set-brightness",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "brightness",
+                        "in": "body",
+                        "description": "the brightness level",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/Brightness"
+                        }
+                    }
+                ],
+                "responses": {
+                    "404": {
+                        "description": "Device not found"
+                    },
+                    "200": {
+                        "description": "Brightness successfully set"
+                    }
+                }
+            },
+            "get": {
+                "tags": ["charger"],
+                "description": "Get device brightness",
+                "operationId": "charger-get-brightness",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "404": {
+                        "description": "Device not found"
+                    },
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Brightness"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/charger/by-adoption-token/{token}/owner": {
+            "put": {
+                "tags": ["adoption"],
+                "description": "Adopt charger identified by token for the logged in user",
+                "operationId": "charger-set-owner-by-token",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "description": "Adoption token",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "[A-Z0-9]{12}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "404": {
+                        "description": "Device not found"
+                    },
+                    "201": {
+                        "description": "Device successfully adopted"
+                    }
+                }
+            }
+        },
+
+        "/charger/by-id/{id}/charging-timeline/by-period/{period}": {
+            "get": {
+                "tags": ["analytics"],
+                "description": "Get energy consumed by charger for a given time period at a given granularity",
+                "operationId": "charger-timeline-by-period",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "period",
+                        "in": "path",
+                        "description": "Timeline period. Can be one of (d)ays, (w)eeks, or (m)onths",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "5s|d|w|m"
+                        }
+                    },
+                    {
+                        "name": "n",
+                        "in": "query",
+                        "description": "Count of items to return",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "Offset to start timeline from, in seconds from epoch",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Page of points on timeline",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TimelinePage"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/charger/by-id/{id}/power-timeline/by-period/{period}": {
+            "get": {
+                "tags": ["analytics"],
+                "description": "Get average power drawn by charger for a given time period at a given granularity",
+                "operationId": "power-timeline-by-period",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "period",
+                        "in": "path",
+                        "description": "Timeline period. Can be one of (d)ays, (w)eeks, or (m)onths",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "5s|d|w|m"
+                        }
+                    },
+                    {
+                        "name": "n",
+                        "in": "query",
+                        "description": "Count of items to return",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "Offset to start timeline from, in seconds from epoch",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Page of points on timeline",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TimelinePage"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/charger/by-id/{id}/schedule": {
+            "get": {
+                "tags": ["schedule"],
+                "description": "Get charging schedule for a given charger",
+                "operationId": "charger-schedule-by-id",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The current schedule for this charger",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Schedule"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/charger/by-owner": {
+            "get": {
+                "tags": ["charger"],
+                "description": "Get chargers adopted by logged in user",
+                "operationId": "charger-list-by-owner",
+                "responses": {
+                    "200": {
+                        "description": "List of adopted devices",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdoptedChargers"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/charger/by-mac/{mac}/device-id": {
+            "get": {
+                "tags": ["charger"],
+                "description": "Find a charger by MAC address",
+                "operationId": "charger-get-by-mac",
+                "parameters": [
+                    {
+                        "name": "mac",
+                        "in": "path",
+                        "required": true,
+                        "description": "MAC address",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "[a-f0-9]{12}"
+                        }
+                    }
+                ]
+            }
+        },
+        "/charger/by-id/{id}/mms/allow": {
+            "post": {
+                "tags": ["mms"],
+                "description": "Allow-list a device for MMS",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ]
+            }
+        },
+        "/charger/by-id/{id}/tariff": {
+            "get": {
+                "tags": ["tariff"],
+                "deprecated": true,
+                "description": "List tariffs associated with a device (replaced by placement-based tariff)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tariffs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Tariff"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": ["tariff"],
+                "deprecated": true,
+                "description": "Set tariff associated with a device (replaced by placement-based tariff)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "tariff",
+                        "in": "body",
+                        "description": "new tariffs",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/Tariff"
+                        }
+                    }
+                ]
+            }
+        },
+        "/charger/by-id/{id}/mms/forbid": {
+            "post": {
+                "tags": ["mms"],
+                "description": "Remove a device from the MMS allow-list",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ]
+            }
+        },
+        "/charger/by-id/{id}/unbind/{placementId}": {
+            "post": {
+                "tags": ["placement"],
+                "description": "Un-bind a placement",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "charger id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "placementId",
+                        "in": "path",
+                        "description": "placement id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ]
+            }
+        },
+        "/placements": {
+            "get": {
+                "tags": ["placement"],
+                "description": "List placements belonging to the authenticated user",
+                "responses": {
+                    "200": {
+                        "description": "List of placements",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Placements"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AdoptedChargers": {
+                "type": "object",
+                "properties": {
+                    "chargers": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/AdoptedCharger"
+                        }
+                    }
+                }
+            },
+            "AdoptedCharger": {
+                "type": "object",
+                "properties": {
+                    "charger_id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "created": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "example": {
+                    "charger_id": 202481586541825,
+                    "created": "2020-10-04T12:19:18.353621Z"
+                }
+            },
+            "Brightness": {
+                "type": "object",
+                "required": ["brightness"],
+                "properties": {
+                    "brightness": {
+                        "type": "number",
+                        "format": "float",
+                        "minimum": 0,
+                        "maximum": 1
+                    }
+                }
+            },
+            "Currencies": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/Currency"
+                }
+            },
+            "Currency": {
+                "type": "object",
+                "properties": {
+                    "code" : {
+                        "type": "string"
+                    },
+                    "name" : {
+                        "type": "string"
+                    },
+                    "symbol" : {
+                        "type": "string"
+                    }
+                },
+                "example": {
+                    "code" : "GBP",
+                    "name" : "British Pound",
+                    "symbol" : "£"
+                }
+            },
+            "Tariff": {
+                "type": "object",
+                "required": ["interval"],
+                "properties": {
+                    "interval": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TariffInterval"
+                        },
+                        "description": "List of tariff intervals"
+                    }
+                }
+            },
+            "TariffInterval": {
+                "type": "object",
+                "required": ["rate", "start"],
+                "properties": {
+                    "rate": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Rate in GBP"
+                    },
+                    "start": {
+                        "type": "string",
+                        "format": "time",
+                        "description": "Start of the tariff interval, stops whenever another interval is encountered or end of day"
+                    }
+                }
+            },
+            "Timezones": {
+                "type": "object",
+                "properties": {
+                    "timezone": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "example": {
+                    "timezone": [
+                        "Europe/London",
+                        "America/New_York",
+                        "Australia/Sydney"
+                    ]
+                }
+            },
+            "Placements": {
+                "type": "object",
+                "required": [
+                    "id", "tz", "currency"
+                ],
+                "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Placement ID"
+                    },
+                    "charger_id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "tz": {
+                        "type": "string",
+                        "format": "timezone"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "format": "currency"
+                    },
+                    "active_energy_provider": {
+                        "type": "string",
+                        "description": "Currently active energy provider integration, e.g 'OVO'"
+                    }
+                },
+                "example": {
+                    "id" : "3d4f90f5-5eeb-4af5-a924-7ba318872955",
+                    "charger_id" : "216454482408824951",
+                    "tz" : "Europe/Paris",
+                    "currency" : "EUR",
+                    "active_energy_provider" : null
+                }
+            },
+            "TimelinePage": {
+                "type": "object",
+                "properties": {
+                    "prev": {
+                        "type": "string",
+                        "format": "url"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "url"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TimelinePoint"
+                        }
+                    }
+                }
+            },
+            "TimelinePoint": {
+                "type": "object",
+                "properties": {
+                   "at": {
+                       "type": "string",
+                       "format": "date-time"
+                   },
+                   "value": {
+                       "type": "integer",
+                       "format": "int64"
+                   }
+                }
+            },
+            "Schedule": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/OpenSchedule"
+                    },
+                    {
+                        "$ref": "#/components/schemas/RestrictedSchedule"
+                    }
+                ]
+            },
+            "OpenSchedule": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "pattern": "open" 
+                    }
+                }
+            },
+            "RestrictedSchedule": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "pattern": "restricted" 
+                    },
+                    "tz": {
+                        "type": "string",
+                        "format": "timezone"
+                    },
+                    "intervals": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ScheduleInterval"
+                        }
+                    }
+                },
+                "example": {
+                    "type": "restricted",
+                    "tz": "Europe/London",
+                    "intervals": [
+                        [{"hours": 0, "minutes": 0, "seconds": 0}, {"hours": 7, "minutes": 0, "seconds": 0}],
+                        [{"hours": 15, "minutes": 30, "seconds": 0}, {"hours": 18, "minutes": 45, "seconds": 0}]
+                    ]
+                } 
+            },
+            "ScheduleInterval": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/ScheduleLocalTime"
+                },
+                "minItems": 2,
+                "maxItems": 2
+            },
+            "ScheduleLocalTime": {
+                "type": "object",
+                "properties": {
+                    "hours": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "minutes": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "seconds": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            }
+        }
+    }
+}
