@@ -5,6 +5,23 @@ import (
 	"github.com/anas-domesticus/hypervolt_go_sdk/rpc/types"
 )
 
+// GetSchedule sends a request to retrieve the schedule of the charger.
+func (c *Client) GetSchedule() (*types.GetScheduleResponse, error) {
+	req := types.GetScheduleRequest{
+		Request: types.NewRequest("schedules.get"),
+	}
+	rawResp, err := c.sendMessageAndWaitForResponse(req)
+	if err != nil {
+		return nil, err
+	}
+	resp := types.GetScheduleResponse{}
+	err = json.Unmarshal(rawResp, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // SetScheduleEnabled sets the brightness of the charger's LEDs.
 // The value parameter should be between 0 and 1.
 func (c *Client) SetScheduleEnabled(value bool) (*types.SetScheduleEnabledResponse, error) {

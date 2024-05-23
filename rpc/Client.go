@@ -260,6 +260,9 @@ func (c *Client) waitForResponse(ctx context.Context, id string) ([]byte, error)
 			val, ok := c.responseMap[id]
 			c.syncReceiver.mutex.Unlock()
 			if ok {
+				c.syncReceiver.mutex.Lock()
+				delete(c.responseMap, id)
+				c.syncReceiver.mutex.Unlock()
 				return val, nil
 			}
 			time.Sleep(200 * time.Millisecond)
