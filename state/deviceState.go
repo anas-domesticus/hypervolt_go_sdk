@@ -1,6 +1,8 @@
 package state
 
-import "github.com/anas-domesticus/hypervolt_go_sdk/types"
+import (
+	"time"
+)
 
 type HypervoltDeviceState struct {
 	ChargerID                       string
@@ -19,15 +21,68 @@ type HypervoltDeviceState struct {
 	GridPower                       int
 	GenerationPower                 int
 	LEDBrightness                   float64
-	LockState                       *types.HypervoltLockState
-	ChargeMode                      *types.HypervoltChargeMode
-	ReleaseState                    *types.HypervoltReleaseState
-	ActivationMode                  *types.HypervoltActivationMode
-	ScheduleIntervals               []*types.HypervoltScheduleInterval
+	LockState                       HypervoltLockState
+	ChargeMode                      HypervoltChargeMode
+	ReleaseState                    HypervoltReleaseState
+	ActivationMode                  HypervoltActivationMode
+	ScheduleIntervals               []HypervoltScheduleInterval
 	ScheduleTz                      string
 	ScheduleType                    string
 	CarPlugged                      bool
-	ScheduleIntervalsToApply        []*types.HypervoltScheduleInterval
+	ScheduleIntervalsToApply        []HypervoltScheduleInterval
 	SessionWatthoursTotalIncreasing float64
 	CurrentSessionPower             float64
+	RandomStart                     bool
+}
+
+type HypervoltLockState int
+
+const (
+	UNLOCKED HypervoltLockState = iota
+	PENDING_LOCK
+	LOCKED
+)
+
+type HypervoltChargeMode int
+
+const (
+	BOOST HypervoltChargeMode = iota
+	ECO
+	SUPER_ECO
+)
+
+type HypervoltActivationMode int
+
+const (
+	PLUG_AND_CHARGE HypervoltActivationMode = iota
+	SCHEDULE
+)
+
+type HypervoltReleaseState int
+
+const (
+	DEFAULT HypervoltReleaseState = iota
+	RELEASED
+)
+
+type HypervoltDayOfWeek int
+
+const (
+	MONDAY HypervoltDayOfWeek = 1 << iota
+	TUESDAY
+	WEDNESDAY
+	THURSDAY
+	FRIDAY
+	SATURDAY
+	SUNDAY
+	ALL = MONDAY | TUESDAY | WEDNESDAY | THURSDAY | FRIDAY | SATURDAY | SUNDAY
+)
+
+const NUM_SCHEDULE_INTERVALS = 4
+
+type HypervoltScheduleInterval struct {
+	StartTime  time.Time
+	EndTime    time.Time
+	ChargeMode HypervoltChargeMode
+	DaysOfWeek HypervoltDayOfWeek
 }
