@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/anas-domesticus/hypervolt_go_sdk/rpc/types"
+	"github.com/anas-domesticus/hypervolt_go_sdk/state"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"time"
@@ -22,6 +24,7 @@ type Client struct {
 	syncReceiver            responseReceiver
 	syncReceiverLoopRunning bool
 	responseMap             map[string][]byte
+	chargerState            state.HypervoltDeviceState
 }
 
 func NewClient(chargerID int) (*Client, error) {
@@ -34,17 +37,80 @@ func NewClient(chargerID int) (*Client, error) {
 		return nil, err
 	}
 	responseMap := make(map[string][]byte)
-	return &Client{
+	chargerState := state.HypervoltDeviceState{}
+	c := &Client{
 		syncConnection: syncConnection,
 		syncReceiver: responseReceiver{
-			messageBuffer: make(chan RawMessage, 200),
+			messageBuffer: make(chan RawMessage, 25),
 			responseChan:  make(chan RawMessage),
 			updateChan:    make(chan RawMessage),
 			connection:    syncConnection,
 			responseMap:   responseMap,
 		},
-		responseMap: responseMap,
-	}, nil
+		responseMap:  responseMap,
+		chargerState: chargerState,
+	}
+	c.syncReceiver.updateChargerState = c.updateChargerState
+	return c, nil
+}
+
+func (c *Client) updateChargerState(msg RawMessage) error {
+	val, ok := msg["method"]
+	if !ok {
+		return errors.New("no method in message")
+	}
+	bytes, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	switch val {
+	case "get.session":
+		var response types.GetSession
+		err := json.Unmarshal(bytes, &response)
+		if err != nil {
+			return err
+		}
+		return c.handleGetSession(&response)
+	}
+	return nil
+}
+
+func (c *Client) handleGetSession(msg *types.GetSession) error {
+	if msg == nil {
+		return errors.New("cannot handle nil message")
+	}
+	if msg.Params.Charging != nil {
+		c.chargerState.IsCharging = *msg.Params.Charging
+		c.chargerState.CarPlugged = true
+	}
+	if msg.Params.TrueMilliAmps != nil {
+		c.chargerState.CurrentSessionCurrentMilliamps = *msg.Params.TrueMilliAmps
+	}
+	if msg.Params.Voltage != nil {
+		c.chargerState.CurrentSessionVoltage = *msg.Params.Voltage
+	}
+	if msg.Params.WattHours != nil {
+		c.chargerState.SessionWatthours = *msg.Params.WattHours
+	}
+	if msg.Params.CarbonSavedGrams != nil {
+		c.chargerState.SessionCarbonSavedGrams = *msg.Params.CarbonSavedGrams
+	}
+	if msg.Params.CtCurrent != nil {
+		c.chargerState.CurrentSessionCtCurrent = *msg.Params.CtCurrent
+	}
+	if msg.Params.EvPower != nil {
+		c.chargerState.EVPower = *msg.Params.EvPower
+	}
+	if msg.Params.GridPower != nil {
+		c.chargerState.GridPower = *msg.Params.GridPower
+	}
+	if msg.Params.HousePower != nil {
+		c.chargerState.HousePower = *msg.Params.HousePower
+	}
+	if msg.Params.GenerationPower != nil {
+		c.chargerState.GenerationPower = *msg.Params.GenerationPower
+	}
+	return nil
 }
 
 func (c *Client) StartResponseLoop() {

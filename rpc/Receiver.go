@@ -8,12 +8,13 @@ import (
 )
 
 type responseReceiver struct {
-	messageBuffer chan RawMessage
-	responseChan  chan RawMessage
-	updateChan    chan RawMessage
-	connection    *websocket.Conn
-	mutex         sync.Mutex
-	responseMap   map[string][]byte
+	messageBuffer      chan RawMessage
+	responseChan       chan RawMessage
+	updateChan         chan RawMessage
+	connection         *websocket.Conn
+	mutex              sync.Mutex
+	responseMap        map[string][]byte
+	updateChargerState func(message RawMessage) error
 }
 
 func (r *responseReceiver) receiverLoop() error {
@@ -67,8 +68,11 @@ func (r *responseReceiver) responseLoop() error {
 
 func (r *responseReceiver) updateLoop() error {
 	for {
-		_ = <-r.updateChan
-		// TODO: Implement
+		message := <-r.updateChan
+		err := r.updateChargerState(message)
+		if err != nil {
+			return err
+		}
 	}
 }
 

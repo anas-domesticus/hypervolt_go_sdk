@@ -6,18 +6,18 @@ type HypervoltDeviceState struct {
 	ChargerID                       string
 	IsCharging                      bool
 	SessionID                       string
-	SessionWatthours                float64
+	SessionWatthours                int
 	SessionCurrencySpent            float64
-	SessionCarbonSavedGrams         float64
-	MaxCurrentMilliamps             float64
-	CurrentSessionCurrentMilliamps  float64
-	CurrentSessionCtCurrent         float64
-	CurrentSessionCtPower           float64
-	CurrentSessionVoltage           float64
-	EVPower                         float64
-	HousePower                      float64
-	GridPower                       float64
-	GenerationPower                 float64
+	SessionCarbonSavedGrams         int
+	MaxCurrentMilliamps             int
+	CurrentSessionCurrentMilliamps  int
+	CurrentSessionCtCurrent         int
+	CurrentSessionCtPower           int
+	CurrentSessionVoltage           int
+	EVPower                         int
+	HousePower                      int
+	GridPower                       int
+	GenerationPower                 int
 	LEDBrightness                   float64
 	LockState                       *types.HypervoltLockState
 	ChargeMode                      *types.HypervoltChargeMode
