@@ -6,10 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/anas-domesticus/hypervolt_go_sdk/rpc/types"
-	"github.com/anas-domesticus/hypervolt_go_sdk/state"
 	"github.com/gorilla/websocket"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -25,7 +23,7 @@ type Client struct {
 	syncReceiver            responseReceiver
 	syncReceiverLoopRunning bool
 	responseMap             map[string][]byte
-	chargerState            state.HypervoltDeviceState
+	currentSession          types.SessionParams
 }
 
 func NewClient(chargerID int) (*Client, error) {
@@ -41,13 +39,11 @@ func NewClient(chargerID int) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.chargerState.ChargerID = strconv.Itoa(chargerID)
 	return c, nil
 }
 
 func NewClientWithConnection(w WebsocketWrapperIface) (*Client, error) {
 	responseMap := make(map[string][]byte)
-	chargerState := state.HypervoltDeviceState{}
 	c := &Client{
 		syncConnection: w,
 		syncReceiver: responseReceiver{
@@ -57,8 +53,7 @@ func NewClientWithConnection(w WebsocketWrapperIface) (*Client, error) {
 			connection:    w,
 			responseMap:   responseMap,
 		},
-		responseMap:  responseMap,
-		chargerState: chargerState,
+		responseMap: responseMap,
 	}
 	c.syncReceiver.updateChargerState = c.updateChargerState
 	return c, nil
@@ -81,111 +76,17 @@ func (c *Client) updateChargerState(msg RawMessage) error {
 			return err
 		}
 		return c.handleGetSession(&response)
-	case "sync.apply":
-		var response types.SyncApply
-		err := json.Unmarshal(bytes, &response)
-		if err != nil {
-			return err
-		}
-		return c.handleSyncApply(&response)
 	}
 	return nil
 }
 
 func (c *Client) handleGetSession(msg *types.GetSession) error {
-	if msg == nil {
-		return errors.New("cannot handle nil message")
-	}
-	if msg.Params.Charging != nil {
-		c.chargerState.IsCharging = *msg.Params.Charging
-		if *msg.Params.Charging {
-			c.chargerState.CarPlugged = true
-		}
-	}
-	if msg.Params.TrueMilliAmps != nil {
-		c.chargerState.CurrentSessionCurrentMilliamps = *msg.Params.TrueMilliAmps
-	}
-	if msg.Params.Voltage != nil {
-		c.chargerState.CurrentSessionVoltage = *msg.Params.Voltage
-	}
-	if msg.Params.Voltage != nil && msg.Params.TrueMilliAmps != nil {
-		c.chargerState.CurrentSessionPower = float64(*msg.Params.Voltage) * float64(*msg.Params.TrueMilliAmps)
-	}
-	if msg.Params.WattHours != nil {
-		c.chargerState.SessionWatthours = *msg.Params.WattHours
-	}
-	if msg.Params.CarbonSavedGrams != nil {
-		c.chargerState.SessionCarbonSavedGrams = *msg.Params.CarbonSavedGrams
-	}
-	if msg.Params.CtCurrent != nil {
-		c.chargerState.CurrentSessionCtCurrent = *msg.Params.CtCurrent // TODO: check this is right
-	}
-	if msg.Params.EvPower != nil {
-		c.chargerState.EVPower = *msg.Params.EvPower
-	}
-	if msg.Params.GridPower != nil {
-		c.chargerState.GridPower = *msg.Params.GridPower
-	}
-	if msg.Params.HousePower != nil {
-		c.chargerState.HousePower = *msg.Params.HousePower
-	}
-	if msg.Params.GenerationPower != nil {
-		c.chargerState.GenerationPower = *msg.Params.GenerationPower
-	}
+	c.currentSession = msg.Params
 	return nil
 }
 
-func (c *Client) handleSyncApply(msg *types.SyncApply) error {
-	if msg == nil {
-		return errors.New("cannot handle nil message")
-	}
-	for i := range msg.Params {
-		if msg.Params[i].Brightness != nil {
-			c.chargerState.LEDBrightness = *msg.Params[i].Brightness
-		}
-		if msg.Params[i].LockState != nil {
-			switch *msg.Params[i].LockState {
-			case "locked":
-				c.chargerState.LockState = state.LOCKED
-			case "unlocked":
-				c.chargerState.LockState = state.UNLOCKED
-			case "pending":
-				c.chargerState.LockState = state.PENDING_LOCK
-			}
-		}
-		if msg.Params[i].ReleaseState != nil {
-			switch *msg.Params[i].ReleaseState {
-			case "default":
-				c.chargerState.ReleaseState = state.DEFAULT
-			case "released":
-				c.chargerState.ReleaseState = state.RELEASED
-			}
-		}
-		if msg.Params[i].MaxCurrent != nil {
-			c.chargerState.MaxCurrentMilliamps = *msg.Params[i].MaxCurrent
-		}
-		if msg.Params[i].CtFlags != nil { // TODO
-		}
-		if msg.Params[i].SolarMode != nil {
-			switch *msg.Params[i].SolarMode {
-			case "boost":
-				c.chargerState.ChargeMode = state.BOOST
-			case "eco":
-				c.chargerState.ChargeMode = state.ECO
-			case "super_eco": // TODO: check these
-				c.chargerState.ChargeMode = state.SUPER_ECO
-			}
-		}
-		if msg.Params[i].Features != nil { // TODO
-		}
-		if msg.Params[i].RandomStart != nil {
-			c.chargerState.RandomStart = *msg.Params[i].RandomStart
-		}
-		if msg.Params[i].EffectName != nil { // TODO
-		}
-	}
-
-	return nil
+func (c *Client) GetCurrentSession() *types.SessionParams {
+	return &c.currentSession
 }
 
 func (c *Client) StartResponseLoop() {
@@ -265,7 +166,7 @@ func (c *Client) waitForResponse(ctx context.Context, id string) ([]byte, error)
 				c.syncReceiver.mutex.Unlock()
 				return val, nil
 			}
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }

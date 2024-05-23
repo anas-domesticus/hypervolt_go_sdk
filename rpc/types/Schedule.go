@@ -5,30 +5,13 @@ import (
 	"time"
 )
 
-type GetScheduleRequest struct {
-	Request
-}
-
 type ScheduleSession struct {
-	Days        []DayOfWeek `json:"days"`
-	EndTime     time.Time   `json:"end_time"`
-	Mode        string      `json:"mode"`
-	SessionType string      `json:"session_type"`
-	StartTime   time.Time   `json:"start_time"`
+	Days        []DayOfWeek         `json:"days"`
+	EndTime     time.Time           `json:"end_time"`
+	Mode        HypervoltChargeMode `json:"mode"`
+	SessionType string              `json:"session_type"`
+	StartTime   time.Time           `json:"start_time"`
 }
-
-type DayOfWeek int
-
-const (
-	MONDAY DayOfWeek = iota
-	TUESDAY
-	WEDNESDAY
-	THURSDAY
-	FRIDAY
-	SATURDAY
-	SUNDAY
-	ALL
-)
 
 func (ss *ScheduleSession) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" || string(data) == `""` {
@@ -44,7 +27,7 @@ func (ss *ScheduleSession) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &jsonScheduleSession); err != nil {
 		return err
 	}
-	ss.Mode = jsonScheduleSession.Mode
+	ss.Mode = HypervoltChargeMode(jsonScheduleSession.Mode)
 	ss.SessionType = jsonScheduleSession.SessionType
 
 	t, err := time.Parse("15:04", jsonScheduleSession.StartTime)
@@ -60,29 +43,35 @@ func (ss *ScheduleSession) UnmarshalJSON(data []byte) error {
 
 	ss.Days = []DayOfWeek{}
 	for _, day := range jsonScheduleSession.Days {
-		switch day {
-		case "MONDAY":
-			ss.Days = append(ss.Days, MONDAY)
-		case "TUESDAY":
-			ss.Days = append(ss.Days, TUESDAY)
-		case "WEDNESDAY":
-			ss.Days = append(ss.Days, WEDNESDAY)
-		case "THURSDAY":
-			ss.Days = append(ss.Days, THURSDAY)
-		case "FRIDAY":
-			ss.Days = append(ss.Days, FRIDAY)
-		case "SATURDAY":
-			ss.Days = append(ss.Days, SATURDAY)
-		case "SUNDAY":
-			ss.Days = append(ss.Days, SUNDAY)
-		case "ALL":
-			ss.Days = append(ss.Days, ALL)
-		}
+		ss.Days = append(ss.Days, DayOfWeek(day))
 	}
 	return nil
 }
 
-type GetScheduleResponseParams struct { // TODO: make this better, improve types etc
+func (ss *ScheduleSession) MarshalJSON() ([]byte, error) {
+	var jsonScheduleSession struct {
+		Days        []string `json:"days"`
+		EndTime     string   `json:"end_time"`
+		Mode        string   `json:"mode"`
+		SessionType string   `json:"session_type"`
+		StartTime   string   `json:"start_time"`
+	}
+	jsonScheduleSession.Mode = string(ss.Mode)
+	jsonScheduleSession.SessionType = ss.SessionType
+	jsonScheduleSession.StartTime = ss.StartTime.Format("15:04")
+	jsonScheduleSession.EndTime = ss.EndTime.Format("15:04")
+	for _, day := range ss.Days {
+		jsonScheduleSession.Days = append(jsonScheduleSession.Days, string(day))
+	}
+
+	return json.Marshal(jsonScheduleSession)
+}
+
+type GetScheduleRequest struct {
+	Request
+}
+
+type GetScheduleResponseParams struct {
 	Applied struct {
 		Enabled   bool              `json:"enabled"`
 		IsDefault bool              `json:"is_default"`
@@ -94,6 +83,23 @@ type GetScheduleResponseParams struct { // TODO: make this better, improve types
 }
 
 type GetScheduleResponse struct {
+	Response
+	Result GetScheduleResponseParams `json:"result"`
+}
+
+type SetScheduleRequest struct {
+	Request
+	Params SetScheduleRequestParams `json:"params"`
+}
+
+type SetScheduleRequestParams struct {
+	Enabled   bool              `json:"enabled"`
+	IsDefault bool              `json:"is_default"`
+	Sessions  []ScheduleSession `json:"sessions"`
+	Type      string            `json:"type"`
+}
+
+type SetScheduleResponse struct {
 	Response
 	Result GetScheduleResponseParams `json:"result"`
 }
@@ -125,10 +131,12 @@ type SetScheduleEnabledResponseParams struct {
 
 // {"id":"1716470495334144","jsonrpc":"2.0","result":{"applied":{"enabled":true,"is_default":false,"sessions":[{"days":["THURSDAY"],"end_time":"05:00","mode":"boost","session_type":"recurring","start_time":"04:00"}],"type":"hypervolt"},"pending":{}}}
 
-type T struct {
-	Days        []string `json:"days"`
-	EndTime     string   `json:"end_time"`
-	Mode        string   `json:"mode"`
-	SessionType string   `json:"session_type"`
-	StartTime   string   `json:"start_time"`
+type T2 struct {
+	Type      string `json:"type"`
+	Tz        string `json:"tz"`
+	Intervals [][]struct {
+		Hours   int `json:"hours"`
+		Minutes int `json:"minutes"`
+		Seconds int `json:"seconds"`
+	} `json:"intervals"`
 }
