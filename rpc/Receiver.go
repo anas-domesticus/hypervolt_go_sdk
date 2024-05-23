@@ -3,7 +3,6 @@ package rpc
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"sync"
 )
 
@@ -11,7 +10,7 @@ type responseReceiver struct {
 	messageBuffer      chan RawMessage
 	responseChan       chan RawMessage
 	updateChan         chan RawMessage
-	connection         *websocket.Conn
+	connection         WebsocketWrapperIface
 	mutex              sync.Mutex
 	responseMap        map[string][]byte
 	updateChargerState func(message RawMessage) error

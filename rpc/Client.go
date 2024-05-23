@@ -19,7 +19,7 @@ const (
 )
 
 type Client struct {
-	syncConnection          *websocket.Conn
+	syncConnection          WebsocketWrapperIface
 	token                   string
 	syncReceiver            responseReceiver
 	syncReceiverLoopRunning bool
@@ -36,15 +36,19 @@ func NewClient(chargerID int) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	return NewClientWithConnection(syncConnection)
+}
+
+func NewClientWithConnection(w WebsocketWrapperIface) (*Client, error) {
 	responseMap := make(map[string][]byte)
 	chargerState := state.HypervoltDeviceState{}
 	c := &Client{
-		syncConnection: syncConnection,
+		syncConnection: w,
 		syncReceiver: responseReceiver{
 			messageBuffer: make(chan RawMessage, 25),
 			responseChan:  make(chan RawMessage),
 			updateChan:    make(chan RawMessage),
-			connection:    syncConnection,
+			connection:    w,
 			responseMap:   responseMap,
 		},
 		responseMap:  responseMap,
