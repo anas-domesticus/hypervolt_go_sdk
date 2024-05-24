@@ -82,3 +82,4 @@ func main() {
 
 ## Known limitations
 - Login has to be with username & password
+- I *think* this will only work with V3 chargers currently
