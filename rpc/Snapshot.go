@@ -5,7 +5,7 @@ import (
 	"github.com/anas-domesticus/hypervolt_go_sdk/rpc/types"
 )
 
-// GetSnapshot sends a request to retrieve the plug and charge state of the charger.
+// GetSnapshot sends a request to retrieve the status of the charger
 func (c *Client) GetSnapshot() (*types.GetSnapshotResponse, error) {
 	req := types.GetSnapshotRequest{
 		Request: types.NewRequest("sync.snapshot"),

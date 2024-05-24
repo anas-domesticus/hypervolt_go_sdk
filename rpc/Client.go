@@ -91,34 +91,7 @@ func (c *Client) GetCurrentSession() *types.SessionParams {
 
 func (c *Client) StartResponseLoop() {
 	c.syncReceiverLoopRunning = true
-	go func() {
-		err := c.syncReceiver.receiverLoop()
-		if err != nil {
-			fmt.Println("Error in receiver loop:", err)
-		}
-		time.Sleep(2 * time.Second)
-	}()
-	go func() {
-		err := c.syncReceiver.dispatcherLoop()
-		if err != nil {
-			fmt.Println("Error in dispatcher loop:", err)
-		}
-		time.Sleep(2 * time.Second)
-	}()
-	go func() {
-		err := c.syncReceiver.responseLoop()
-		if err != nil {
-			fmt.Println("Error in response loop:", err)
-		}
-		time.Sleep(2 * time.Second)
-	}()
-	go func() {
-		err := c.syncReceiver.updateLoop()
-		if err != nil {
-			fmt.Println("Error in response loop:", err)
-		}
-		time.Sleep(2 * time.Second)
-	}()
+	c.syncReceiver.StartLoops()
 }
 
 func (c *Client) Close() error {

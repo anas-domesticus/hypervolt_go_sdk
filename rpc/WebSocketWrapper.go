@@ -2,6 +2,8 @@ package rpc
 
 import "github.com/gorilla/websocket"
 
+//go:generate mockery --name WebsocketWrapperIface
+
 type WebsocketWrapperIface interface {
 	ReadMessage() (int, []byte, error)
 	WriteMessage(int, []byte) error

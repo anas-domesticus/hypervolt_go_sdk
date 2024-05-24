@@ -16,6 +16,37 @@ type responseReceiver struct {
 	updateChargerState func(message RawMessage) error
 }
 
+type ReceiverStopSignal struct{}
+
+func (r *responseReceiver) StartLoops() chan ReceiverStopSignal {
+	channel := make(chan ReceiverStopSignal)
+	go func() {
+		err := r.receiverLoop()
+		if err != nil {
+			fmt.Println("Error in receiver loop:", err)
+		}
+	}()
+	go func() {
+		err := r.dispatcherLoop()
+		if err != nil {
+			fmt.Println("Error in dispatcher loop:", err)
+		}
+	}()
+	go func() {
+		err := r.responseLoop()
+		if err != nil {
+			fmt.Println("Error in response loop:", err)
+		}
+	}()
+	go func() {
+		err := r.updateLoop()
+		if err != nil {
+			fmt.Println("Error in response loop:", err)
+		}
+	}()
+	return channel
+}
+
 func (r *responseReceiver) receiverLoop() error {
 	for {
 		_, message, err := r.connection.ReadMessage()
