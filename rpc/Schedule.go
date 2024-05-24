@@ -45,7 +45,6 @@ func (c *Client) SetSchedule(sessions []types.ScheduleSession, enable bool) (*ty
 }
 
 // SetScheduleEnabled sets whether the charger is in Schedule mode
-// The value parameter should be between 0 and 1.
 func (c *Client) SetScheduleEnabled(value bool) (*types.SetScheduleEnabledResponse, error) {
 	req := types.SetScheduleEnabledRequest{
 		Request: types.NewRequest("schedule.set"),
