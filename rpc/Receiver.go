@@ -85,10 +85,12 @@ func (r *responseReceiver) responseLoop() error {
 		val, ok := message["id"].(string)
 		if !ok {
 			fmt.Println("ID received incorrect type")
+			continue
 		}
 		bytes, err := json.Marshal(message)
 		if err != nil {
 			fmt.Println("failed to marshal message")
+			continue
 		}
 		r.mutex.Lock()
 		r.responseMap[val] = bytes
