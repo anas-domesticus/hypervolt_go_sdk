@@ -8,6 +8,12 @@ const (
 	SUPER_ECO HypervoltChargeMode = "super_eco"
 )
 
+type HypervoltSessionType string
+
+const (
+	RECURRING HypervoltSessionType = "recurring"
+)
+
 type DayOfWeek string
 
 const (

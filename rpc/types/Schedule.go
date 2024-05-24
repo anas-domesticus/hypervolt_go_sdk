@@ -6,11 +6,11 @@ import (
 )
 
 type ScheduleSession struct {
-	Days        []DayOfWeek         `json:"days"`
-	EndTime     time.Time           `json:"end_time"`
-	Mode        HypervoltChargeMode `json:"mode"`
-	SessionType string              `json:"session_type"`
-	StartTime   time.Time           `json:"start_time"`
+	Days        []DayOfWeek          `json:"days"`
+	EndTime     time.Time            `json:"end_time"`
+	Mode        HypervoltChargeMode  `json:"mode"`
+	SessionType HypervoltSessionType `json:"session_type"`
+	StartTime   time.Time            `json:"start_time"`
 }
 
 func (ss *ScheduleSession) UnmarshalJSON(data []byte) error {
@@ -28,7 +28,7 @@ func (ss *ScheduleSession) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	ss.Mode = HypervoltChargeMode(jsonScheduleSession.Mode)
-	ss.SessionType = jsonScheduleSession.SessionType
+	ss.SessionType = HypervoltSessionType(jsonScheduleSession.SessionType)
 
 	t, err := time.Parse("15:04", jsonScheduleSession.StartTime)
 	if err != nil {
@@ -57,9 +57,12 @@ func (ss *ScheduleSession) MarshalJSON() ([]byte, error) {
 		StartTime   string   `json:"start_time"`
 	}
 	jsonScheduleSession.Mode = string(ss.Mode)
-	jsonScheduleSession.SessionType = ss.SessionType
+	jsonScheduleSession.SessionType = string(ss.SessionType)
 	jsonScheduleSession.StartTime = ss.StartTime.Format("15:04")
 	jsonScheduleSession.EndTime = ss.EndTime.Format("15:04")
+	if len(ss.Days) < 1 {
+		jsonScheduleSession.Days = []string{}
+	}
 	for _, day := range ss.Days {
 		jsonScheduleSession.Days = append(jsonScheduleSession.Days, string(day))
 	}
