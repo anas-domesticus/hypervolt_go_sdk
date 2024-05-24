@@ -9,7 +9,7 @@ import (
 	"net/url"
 )
 
-const (
+var (
 	authEndpoint = "https://kc.prod.hypervolt.co.uk/realms/retail-customers/protocol/openid-connect/token"
 )
 
